@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineBook - Movie Booking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+    header {
+      margin: 2rem;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .container {
+      background-color: #1e1e1e;
+      padding: 2rem;
+      border-radius: 1rem;
+      min-width: 300px;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #6c63ff;
+    }
+    .btn-grid {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 12px 25px;
+      background-color: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+      min-width: 120px;
+      text-align: center;
+    }
+    .btn:hover {
+      background-color: #5548c8;
+      transform: translateY(-2px);
+    }
+    .btn.selected-seat {
+      background-color: green;
+    }
+    .btn.booked-seat {
+        background-color: #880000; /* Red for permanently booked */
+        cursor: not-allowed;
+    }
+    .btn.pending-seat {
+        background-color: #FFA500; /* Orange for temporarily blocked (pending payment) */
+        cursor: not-allowed;
+    }
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .btn.back-btn {
+        background-color: #555;
+        margin-top: 1rem;
+    }
+    .btn.back-btn:hover {
+        background-color: #444;
+    }
+
+    /* Hide sections by default */
+    #theatre-selection, #movie-list, #screen-list, #seat-selection, #payment-section, #confirmation {
+      display: none;
+    }
+    #overview-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    #overview-section p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+    .movie-card {
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: 180px; /* Fixed width for movie cards */
+      text-align: center;
+    }
+    .movie-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    .movie-card img {
+      width: 150px;
+      height: 225px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-bottom: 0.8rem;
+    }
+    .movie-card h3 {
+      font-size: 1.1rem;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    #movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    #total-amount-display { /* Renamed ID to avoid confusion with span */
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    #confirmation #booking-details {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 2rem;
+      padding: 1.5rem;
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      margin-top: 1.5rem;
+    }
+    #confirmation .movie-poster-details {
+      flex: 1;
+      min-width: 200px;
+      text-align: center;
+    }
+    #confirmation .movie-poster-details img {
+      width: 180px;
+      height: 270px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    #confirmation .booking-text-details {
+      flex: 2;
+      min-width: 250px;
+      text-align: left;
+    }
+    #confirmation .booking-text-details p {
+      margin: 0.7rem 0;
+      font-size: 1.1rem;
+    }
+    #confirmation .booking-text-details strong {
+      color: #6c63ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>🎬</span>
+    <h1>CineBook</h1>
+  </header>
+
+  <div class="container">
+    <div id="city-section">
+      <div class="section-title">Select Your City</div>
+      <div id="overview-section">
+        <p>Welcome to CineBook! Your ultimate destination for booking movie tickets with ease. Select your city to begin your cinematic journey.</p>
+        <p>We offer a seamless experience from choosing your favorite city, finding the latest movies, selecting your preferred theatre and showtime, to picking your perfect seats and completing a secure payment.</p>
+      </div>
+      <div id="city-list" class="btn-grid"></div>
+    </div>
+
+    <div id="movie-list">
+      <div class="section-title">Movies Playing Now</div>
+      <div id="movie-grid"></div>
+      <button class="btn back-btn" onclick="showCities()">Back to Cities</button>
+    </div>
+
+    <div id="theatre-selection">
+      <div class="section-title">Select Theatre</div>
+      <div id="theatre-buttons" class="btn-grid"></div>
+      <button class="btn back-btn" onclick="fetchMovies(selectedCityDocRef)">Back to Movies</button>
+    </div>
+
+    <div id="screen-list">
+      <div class="section-title">Select Screen & Time</div>
+      <div id="screen-buttons" class="btn-grid"></div>
+      <button class="btn back-btn" onclick="fetchTheatres(selectedMovieDocRef)">Back to Theatres</button>
+    </div>
+
+    <div id="seat-selection">
+      <div class="section-title">Select Your Seats</div>
+      <div id="seat-buttons" class="btn-grid"></div>
+      <p id="total-amount-display">Total Amount: ₹<span>0</span></p>
+      <button class="btn" onclick="goToPayment()">Proceed to Payment</button>
+      <button class="btn back-btn" onclick="fetchShowtimes(selectedTheatreDocRef, selectedMovieDocRef)">Back to Screen & Time</button>
+    </div>
+
+    <div id="payment-section">
+      <div class="section-title">Payment Details</div>
+      <p id="payment-total-amount">Total Amount: ₹<span>0</span></p>
+      <button class="btn" onclick="confirmBooking()">Confirm Booking</button>
+      <button class="btn back-btn" onclick="selectScreen(selectedShowtimeDoc)">Back to Seat Selection</button>
+    </div>
+
+    <div id="confirmation">
+      <div class="section-title">Booking Confirmed!</div>
+      <div id="booking-details">
+        </div>
+      <button class="btn" onclick="resetBooking()">Book Another Ticket</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script>
+    // !! IMPORTANT !! REPLACE WITH YOUR ACTUAL FIREBASE CONFIG !!
+    // You get this from Firebase Console -> Project Settings -> Your Apps -> Web App -> Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnPt8bt-xGX9VeeaigsgA47MQkeu1cKgQ",
+      authDomain: "cine-book-booking-system.firebaseapp.com",
+      projectId: "cine-book-booking-system",
+      storageBucket: "cine-book-booking-system.firebasestorage.app",
+      messagingSenderId: "906226887869",
+      appId: "1:906226887869:web:40c1298a8b096193f39bd4",
+      measurementId: "G-NTDW96MK9D"
+    };
+
+    // Initialize Firebase using the global 'firebase' object provided by compat SDKs
+    let db; // Declare db outside the try-catch so it's globally accessible by other functions
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore(); // Assign to the global db variable
+      console.log("Firebase initialized successfully!");
+      // If you want to use Analytics with compat SDK, uncomment this:
+      // const analytics = firebase.analytics(); // Access analytics via the global firebase object
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      console.error("Please ensure your firebaseConfig is correct and all Firebase SDK scripts are loaded.");
+      // Display an error message to the user if Firebase doesn't initialize
+      document.getElementById("city-list").innerHTML = "<p style='color:red;'>Error initializing Firebase. Please check console for details and config.</p>";
+    }
+
+
+    // --- Global variables to store document references and data for navigation ---
+    let selectedCityDocRef = null; // Stores Firestore DocumentSnapshot for city
+    let selectedMovieDocRef = null; // Stores Firestore DocumentSnapshot for movie
+    let selectedTheatreDocRef = null; // Stores Firestore DocumentSnapshot for theatre
+    let selectedShowtimeDoc = null; // Stores Firestore DocumentSnapshot for showtime
+    let selectedSeats = []; // Stores seat numbers (e.g., ["Seat 1", "Seat 2"])
+
+    const seatPrice = 150; // Price per seat
+
+    // --- Helper function to hide all sections ---
+    function hideAllSections() {
+      document.getElementById("city-section").style.display = "none";
+      document.getElementById("movie-list").style.display = "none";
+      document.getElementById("theatre-selection").style.display = "none";
+      document.getElementById("screen-list").style.display = "none";
+      document.getElementById("seat-selection").style.display = "none";
+      document.getElementById("payment-section").style.display = "none";
+      document.getElementById("confirmation").style.display = "none";
+    }
+
+    /**
+     * Pre-populates Firestore with initial data if collections are empty.
+     * This is for demonstration. In a real app, you'd populate via admin tools or a backend script.
+     */
+    async function populateInitialData() {
+        console.log("Checking if data needs population...");
+        // Ensure db is defined before trying to access it
+        if (!db) {
+            console.error("Firestore database (db) is not initialized. Cannot populate data.");
+            return;
+        }
+
+        const citiesCollection = db.collection('cities');
+        const moviesCollection = db.collection('movies');
+        const theatresCollection = db.collection('theatres');
+        const showtimesCollection = db.collection('showtimes');
+
+        try {
+            const citySnap = await citiesCollection.limit(1).get();
+            if (!citySnap.empty) {
+                console.log("Data already exists in 'cities' collection. Skipping population.");
+                return; // Data exists, no need to populate
+            }
+        } catch (error) {
+            console.error("Error checking for existing data (perhaps permissions?):", error);
+            // If there's an error checking, we might try to populate anyway,
+            // or assume it's empty if it's a permission error during read.
+            // For now, we'll proceed assuming it's empty if we can't read.
+        }
+
+        console.log("No data found. Populating initial data...");
+
+        const citiesData = [
+            { id: "hyderabad", name: "Hyderabad" },
+            { id: "bangalore", name: "Bangalore" },
+            { id: "chennai", name: "Chennai" },
+            { id: "mumbai", name: "Mumbai" },
+            { id: "delhi", name: "Delhi" }
+        ];
+
+        // UPDATED MOVIE POSTER URLs TO STABLE PLACEHOLDERS FOR DEMO
+       // UPDATED MOVIE POSTER URLs TO EVEN SIMPLER PLACEHOLDERS FOR DEMO RELIABILITY
+const moviesData = [
+    { id: "dune-part-two", name: "Dune: Part Two", poster: "https://placehold.it/150x225/ADD8E6/000000?text=Dune+2" }, // Light blue background, black text
+    { id: "kung-fu-panda-4", name: "Kung Fu Panda 4", poster: "https://placehold.it/150x225/FFB6C1/000000?text=KFP+4" },  // Light pink
+    { id: "godzilla-x-kong", name: "Godzilla x Kong", poster: "https://placehold.it/150x225/90EE90/000000?text=GxK" },     // Light green
+    { id: "ghostbusters", name: "Ghostbusters", poster: "https://placehold.it/150x225/DA70D6/000000?text=Ghostbusters" },// Orchid
+    { id: "challengers", name: "Challengers", poster: "https://placehold.it/150x225/87CEEB/000000?text=Challengers" }, // Sky blue
+    { id: "civil-war", name: "Civil War", poster: "https://placehold.it/150x225/FF6347/FFFFFF?text=Civil+War" },   // Tomato, white text
+    { id: "the-first-omen", name: "The First Omen", poster: "https://placehold.it/150x225/4682B4/FFFFFF?text=First+Omen" }, // Steel blue, white text
+    { id: "monkey-man", name: "Monkey Man", poster: "https://placehold.it/150x225/DDA0DD/000000?text=Monkey+Man" } // Plum
+];
+
+        const theatresPreData = [
+            { id: "pvr-cinemas-hyderabad", name: "PVR Cinemas", city_id: "hyderabad" },
+            { id: "inox-hyderabad", name: "INOX", city_id: "hyderabad" },
+            { id: "cinepolis-bangalore", name: "Cinepolis", city_id: "bangalore" },
+            { id: "prasads-chennai", name: "Prasads", city_id: "chennai" },
+            { id: "dt-cinemas-mumbai", name: "DT Cinemas", city_id: "mumbai" },
+            { id: "wave-cinemas-delhi", name: "Wave Cinemas", city_id: "delhi" },
+        ];
+
+        try {
+            // Add cities
+            for (const city of citiesData) {
+                await citiesCollection.doc(city.id).set(city);
+                console.log(`Added city: ${city.name}`);
+            }
+            // Add movies
+            for (const movie of moviesData) {
+                await moviesCollection.doc(movie.id).set(movie);
+                console.log(`Added movie: ${movie.name}`);
+            }
+            // Add theatres
+            for (const theatre of theatresPreData) {
+                await theatresCollection.doc(theatre.id).set(theatre);
+                console.log(`Added theatre: ${theatre.name}`);
+            }
+
+            // --- Add more diverse showtimes for different cities/theatres ---
+
+            // Hyderabad - PVR Cinemas
+            await showtimesCollection.add({
+                movie_id: "dune-part-two", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 1", time: "10:00 AM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "kung-fu-panda-4", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 3", time: "01:00 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "ghostbusters", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 2", time: "04:00 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            // Hyderabad - INOX
+            await showtimesCollection.add({
+                movie_id: "godzilla-x-kong", theatre_id: "inox-hyderabad", screen_name: "Screen 1", time: "11:00 AM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "monkey-man", theatre_id: "inox-hyderabad", screen_name: "Screen 2", time: "02:30 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            // Bangalore - Cinepolis
+            await showtimesCollection.add({
+                movie_id: "challengers", theatre_id: "cinepolis-bangalore", screen_name: "Screen 1", time: "07:00 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "dune-part-two", theatre_id: "cinepolis-bangalore", screen_name: "Screen 2", time: "10:30 AM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            // Chennai - Prasads
+            await showtimesCollection.add({
+                movie_id: "the-first-omen", theatre_id: "prasads-chennai", screen_name: "Screen 1", time: "09:45 AM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "kung-fu-panda-4", theatre_id: "prasads-chennai", screen_name: "Screen 2", time: "01:15 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            // Mumbai - DT Cinemas
+            await showtimesCollection.add({
+                movie_id: "civil-war", theatre_id: "dt-cinemas-mumbai", screen_name: "Screen 1", time: "06:00 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            // Delhi - Wave Cinemas
+            await showtimesCollection.add({
+                movie_id: "godzilla-x-kong", theatre_id: "wave-cinemas-delhi", screen_name: "Screen 1", time: "09:00 PM", total_seats: 20, seats: Array.from({ length: 20 }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+
+            console.log("Initial data populated successfully!");
+        } catch (error) {
+            console.error("Error populating initial data:", error);
+            console.error("This often happens due to Firestore Security Rules. Ensure 'allow write: if true;' (temporarily) is set for all collections.");
+        }
+    }
+
+
+    /**
+     * Displays the initial city selection interface by fetching cities from Firestore.
+     */
+    async function showCities() {
+      hideAllSections();
+      document.getElementById("city-section").style.display = "block";
+
+      const cityList = document.getElementById("city-list");
+      cityList.innerHTML = "Loading cities...";
+
+      // Ensure db is defined before trying to use it
+      if (!db) {
+          console.error("Firestore database (db) is not initialized. Cannot fetch cities.");
+          cityList.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized. Check console for Firebase setup errors.</p>";
+          return;
+      }
+
+      try {
+        const snapshot = await db.collection('cities').get();
+        cityList.innerHTML = ""; // Clear loading message
+        if (snapshot.empty) {
+            console.warn("No cities found in Firestore 'cities' collection. Is data populated?");
+            cityList.innerHTML = "<p style='text-align:center;'>No cities found. Please ensure data is added to Firestore (check console for errors).</p>";
+            return;
+        }
+        snapshot.forEach(doc => {
+          const cityData = doc.data();
+          if (cityData && cityData.name) { // Basic validation
+              const btn = document.createElement("button");
+              btn.className = "btn";
+              btn.textContent = cityData.name;
+              btn.onclick = () => fetchMovies(doc); // Pass the full document snapshot
+              cityList.appendChild(btn);
+          } else {
+              console.warn("Found a city document without a 'name' field:", doc.id, cityData);
+          }
+        });
+        console.log("Cities fetched and displayed successfully.");
+      } catch (error) {
+        console.error("Error fetching cities: ", error);
+        console.error("Possible reasons: Firebase config incorrect, Firestore not enabled, or Security Rules blocking read access.");
+        cityList.innerHTML = "<p style='text-align:center; color:red;'>Error loading cities. Please check browser console and Firebase setup.</p>";
+      }
+    }
+
+    /**
+     * Fetches and displays available movies for the selected city from Firestore.
+     * @param {firebase.firestore.DocumentSnapshot} cityDoc - The Firestore document snapshot of the selected city.
+     */
+    async function fetchMovies(cityDoc) {
+      selectedCityDocRef = cityDoc;
+      hideAllSections();
+      document.getElementById("movie-list").style.display = "block";
+
+      const movieGrid = document.getElementById("movie-grid");
+      movieGrid.innerHTML = "Loading movies...";
+
+      if (!db) { console.error("Firestore not initialized."); movieGrid.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        // Fetch all movies, then filter by those available in theatres for this city (more complex query needed for scale)
+        const movieSnapshot = await db.collection('movies').get();
+        const theatreSnapshot = await db.collection('theatres').where('city_id', '==', selectedCityDocRef.id).get();
+        const showtimeSnapshot = await db.collection('showtimes').get(); // Get all showtimes to filter later
+
+        const availableMovieIdsInCity = new Set();
+        theatreSnapshot.forEach(theatreDoc => {
+            const theatreId = theatreDoc.id;
+            showtimeSnapshot.forEach(showtimeDoc => {
+                if (showtimeDoc.data().theatre_id === theatreId) {
+                    availableMovieIdsInCity.add(showtimeDoc.data().movie_id);
+                }
+            });
+        });
+
+        movieGrid.innerHTML = ""; // Clear loading message
+        let moviesFound = false;
+        movieSnapshot.forEach(movieDoc => {
+            if (availableMovieIdsInCity.has(movieDoc.id)) {
+                moviesFound = true;
+                const movieData = movieDoc.data();
+                const movieCard = document.createElement("div");
+                movieCard.className = "movie-card";
+                movieCard.onclick = () => fetchTheatres(movieDoc);
+
+                const img = document.createElement("img");
+                img.src = movieData.poster;
+                img.alt = movieData.name + " Poster";
+                img.onerror = function() { this.onerror=null; this.src='https://placehold.co/150x225/CCCCCC/000000?text=Image+Missing'; }; // More generic fallback
+
+                const title = document.createElement("h3");
+                title.textContent = movieData.name;
+
+                movieCard.appendChild(img);
+                movieCard.appendChild(title);
+                movieGrid.appendChild(movieCard);
+            }
+        });
+
+        if (!moviesFound) {
+            movieGrid.innerHTML = "<p style='text-align:center;'>No movies found for this city.</p>";
+        }
+        console.log("Movies fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching movies: ", error);
+        movieGrid.innerHTML = "<p style='text-align:center; color:red;'>Error loading movies. Please try again.</p>";
+      }
+    }
+
+    /**
+     * Fetches and displays available theatres for the selected movie and city from Firestore.
+     * @param {firebase.firestore.DocumentSnapshot} movieDoc - The Firestore document snapshot of the selected movie.
+     */
+    async function fetchTheatres(movieDoc) {
+      selectedMovieDocRef = movieDoc;
+      hideAllSections();
+      document.getElementById("theatre-selection").style.display = "block";
+
+      const theatreButtons = document.getElementById("theatre-buttons");
+      theatreButtons.innerHTML = "Loading theatres...";
+
+      if (!db) { console.error("Firestore not initialized."); theatreButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        const theatreQuery = db.collection('theatres').where('city_id', '==', selectedCityDocRef.id);
+        const theatreSnapshot = await theatreQuery.get();
+
+        const theatresForMovie = new Set();
+        const showtimeQuery = db.collection('showtimes').where('movie_id', '==', selectedMovieDocRef.id);
+        const showtimeSnapshot = await showtimeQuery.get();
+
+        showtimeSnapshot.forEach(showtimeDoc => {
+            theatresForMovie.add(showtimeDoc.data().theatre_id);
+        });
+
+        theatreButtons.innerHTML = ""; // Clear loading message
+        let theatresFound = false;
+        theatreSnapshot.forEach(theatreDoc => {
+            if (theatresForMovie.has(theatreDoc.id)) {
+                theatresFound = true;
+                const theatreData = theatreDoc.data();
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = theatreData.name;
+                btn.onclick = () => fetchShowtimes(theatreDoc, selectedMovieDocRef);
+                theatreButtons.appendChild(btn);
+            }
+        });
+
+        if (!theatresFound) {
+            theatreButtons.innerHTML = "<p style='text-align:center;'>No theatres found for this movie in your selected city.</p>";
+        }
+        console.log("Theatres fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching theatres: ", error);
+        theatreButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading theatres. Please try again.</p>";
+      }
+    }
+
+    /**
+     * Fetches and displays showtimes for the selected theatre and movie from Firestore.
+     * @param {firebase.firestore.DocumentSnapshot} theatreDoc - The Firestore document snapshot of the selected theatre.
+     * @param {firebase.firestore.DocumentSnapshot} movieDoc - The Firestore document snapshot of the selected movie.
+     */
+    async function fetchShowtimes(theatreDoc, movieDoc) {
+      selectedTheatreDocRef = theatreDoc;
+      selectedMovieDocRef = movieDoc;
+      hideAllSections();
+      document.getElementById("screen-list").style.display = "block";
+
+      const screenButtons = document.getElementById("screen-buttons");
+      screenButtons.innerHTML = "Loading showtimes...";
+
+      if (!db) { console.error("Firestore not initialized."); screenButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        const showtimeQuery = db.collection('showtimes')
+                                .where('theatre_id', '==', theatreDoc.id)
+                                .where('movie_id', '==', movieDoc.id)
+                                .orderBy('time'); // Order by time for better display
+
+        const snapshot = await showtimeQuery.get();
+
+        screenButtons.innerHTML = ""; // Clear loading message
+        if (snapshot.empty) {
+          screenButtons.innerHTML = "<p style='text-align:center;'>No showtimes available for this movie at this theatre.</p>";
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const showtimeData = doc.data();
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = `${showtimeData.screen_name} - ${showtimeData.time}`;
+          btn.onclick = () => selectScreen(doc); // Pass the full showtime document snapshot
+          screenButtons.appendChild(btn);
+        });
+        console.log("Showtimes fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching showtimes: ", error); // THIS IS THE ERROR YOU'RE SEEING
+        screenButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading showtimes. Please try again.</p>";
+      }
+    }
+
+    /**
+     * Handles the selection of a showtime and displays the seat selection.
+     * Fetches real-time seat status from Firestore.
+     * @param {firebase.firestore.DocumentSnapshot} showtimeDoc - The Firestore document snapshot of the selected showtime.
+     */
+    async function selectScreen(showtimeDoc) {
+      selectedShowtimeDoc = showtimeDoc; // Store the entire showtime document
+      hideAllSections();
+      document.getElementById("seat-selection").style.display = "block";
+
+      const seatButtons = document.getElementById("seat-buttons");
+      seatButtons.innerHTML = "Loading seats...";
+      selectedSeats = []; // Reset selected seats for new selection
+      document.getElementById("total-amount-display").textContent = `Total Amount: ₹${0}`;
+
+      if (!db) { console.error("Firestore not initialized."); seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        // Listen to real-time updates for seats
+        db.collection('showtimes').doc(selectedShowtimeDoc.id)
+          .onSnapshot(docSnapshot => {
+            if (docSnapshot.exists) {
+              const showtimeData = docSnapshot.data();
+              const seatsStatus = showtimeData.seats || {}; // Get the current seat map
+
+              seatButtons.innerHTML = ""; // Clear previous buttons
+              const totalSeats = showtimeData.total_seats || 20; // Default to 20 if not set
+
+              for (let i = 1; i <= totalSeats; i++) {
+                const seatNum = `Seat ${i}`;
+                const status = seatsStatus[seatNum] || 'available'; // Default to available
+
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = seatNum;
+
+                if (status === 'booked') {
+                  btn.classList.add('booked-seat');
+                  btn.disabled = true;
+                } else if (status === 'pending') {
+                  btn.classList.add('pending-seat');
+                  btn.disabled = true;
+                } else { // 'available'
+                  btn.onclick = () => toggleSeat(btn, seatNum);
+                  if (selectedSeats.includes(seatNum)) { // If seat was previously selected by THIS user
+                      btn.classList.add('selected-seat');
+                  }
+                }
+                seatButtons.appendChild(btn);
+              }
+              console.log("Seats updated from Firestore.");
+            } else {
+              seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Showtime not found or deleted.</p>";
+              console.error("Showtime document not found:", selectedShowtimeDoc.id);
+            }
+          }, error => {
+            console.error("Error listening to seats:", error);
+            seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading seats in real-time. Please check console.</p>";
+          });
+
+      } catch (error) {
+        console.error("Error preparing seat selection:", error);
+        seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Error preparing seats. Please try again.</p>";
+      }
+    }
+
+    /**
+     * Toggles the selection of a seat and updates the UI and total amount.
+     * This function only manages client-side selection. Actual blocking happens on 'Proceed to Payment'.
+     * @param {HTMLButtonElement} button - The seat button element.
+     * @param {string} seatNum - The seat number (e.g., "Seat 5").
+     */
+    function toggleSeat(button, seatNum) {
+      const index = selectedSeats.indexOf(seatNum);
+
+      if (index > -1) {
+        // Deselect seat
+        selectedSeats.splice(index, 1);
+        button.classList.remove("selected-seat");
+      } else {
+        // Select seat
+        selectedSeats.push(seatNum);
+        button.classList.add("selected-seat");
+      }
+      document.getElementById("total-amount-display").textContent = `Total Amount: ₹${selectedSeats.length * seatPrice}`;
+      console.log("Selected seats:", selectedSeats);
+    }
+
+    /**
+     * Proceeds from seat selection to the payment section.
+     * Attempts to temporarily block selected seats in Firestore.
+     */
+    async function goToPayment() {
+      if (selectedSeats.length === 0) {
+        alert("Please select at least one seat before proceeding to payment.");
+        return;
+      }
+
+      // --- Attempt to block seats in Firestore ---
+      try {
+        const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+        const updates = {};
+        selectedSeats.forEach(seat => {
+          updates[`seats.${seat}`] = "pending"; // Set status to 'pending'
+        });
+
+        await showtimeRef.update(updates); // Atomically update all selected seats
+
+        hideAllSections();
+        document.getElementById("payment-section").style.display = "block";
+        document.getElementById("payment-total-amount").textContent = `Total Amount: ₹${selectedSeats.length * seatPrice}`;
+        console.log("Seats successfully set to 'pending' in Firestore.");
+      } catch (error) {
+        console.error("Error blocking seats:", error);
+        alert("Failed to block seats. They might have been taken or an error occurred. Please re-select your seats.");
+        // If blocking fails, stay on seat selection and refresh seats
+        selectScreen(selectedShowtimeDoc);
+      }
+    }
+
+    /**
+     * Confirms the booking, finalizes seat status to 'booked' in Firestore,
+     * and records the booking.
+     */
+    async function confirmBooking() {
+        if (selectedSeats.length === 0) {
+            alert("No seats selected for booking.");
+            return;
+        }
+
+        try {
+            const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+
+            // Use a Firestore transaction for atomic update of seats and booking creation
+            await db.runTransaction(async (transaction) => {
+                const showtimeDoc = await transaction.get(showtimeRef);
+                if (!showtimeDoc.exists) {
+                    throw new Error("Showtime does not exist!"); // Use Error object for better detail
+                }
+
+                const currentSeatsStatus = showtimeDoc.data().seats || {};
+                const updates = {};
+                const seatsToBook = [];
+
+                selectedSeats.forEach(seat => {
+                    // Check if seat is still 'pending' (from our block) or 'available' (if user somehow skipped block)
+                    // In a production app, you might also check user ID for the 'pending' status.
+                    if (currentSeatsStatus[seat] === 'pending' || currentSeatsStatus[seat] === 'available') {
+                        updates[`seats.${seat}`] = "booked"; // Finalize to 'booked'
+                        seatsToBook.push(seat);
+                    } else {
+                        throw new Error(`Seat ${seat} is no longer available (status: ${currentSeatsStatus[seat] || 'undefined'}).`);
+                    }
+                });
+
+                if (seatsToBook.length !== selectedSeats.length) {
+                    throw new Error("Mismatch in selected seats during booking. Some seats might have been taken.");
+                }
+
+                // Apply seat status updates
+                transaction.update(showtimeRef, updates);
+
+                // Create a new booking record
+                transaction.set(db.collection('bookings').doc(), {
+                    user_id: "anonymous_user", // Replace with actual user ID if using Firebase Auth
+                    showtime_id: selectedShowtimeDoc.id,
+                    movie_name: selectedMovieDocRef.data().name,
+                    movie_poster: selectedMovieDocRef.data().poster,
+                    theatre_name: selectedTheatreDocRef.data().name,
+                    screen_name: selectedShowtimeDoc.data().screen_name,
+                    show_time: selectedShowtimeDoc.data().time,
+                    seats_booked: seatsToBook,
+                    total_amount: seatsToBook.length * seatPrice,
+                    booking_date: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: "confirmed"
+                });
+            });
+
+            // If transaction successful:
+            hideAllSections();
+            document.getElementById("confirmation").style.display = "block";
+
+            const bookingDetails = document.getElementById("booking-details");
+            bookingDetails.innerHTML = `
+                <div class="movie-poster-details">
+                    <img src="${selectedMovieDocRef.data().poster}" alt="${selectedMovieDocRef.data().name} Poster">
+                    <h3>${selectedMovieDocRef.data().name}</h3>
+                </div>
+                <div class="booking-text-details">
+                    <p><strong>City:</strong> ${selectedCityDocRef.data().name}</p>
+                    <p><strong>Theatre:</strong> ${selectedTheatreDocRef.data().name}</p>
+                    <p><strong>Screen & Time:</strong> ${selectedShowtimeDoc.data().screen_name} - ${selectedShowtimeDoc.data().time}</p>
+                    <p><strong>Seats:</strong> ${selectedSeats.join(", ")}</p>
+                    <p><strong>Total Paid:</strong> ₹${selectedSeats.length * seatPrice}</p>
+                </div>
+            `;
+            selectedSeats = []; // Clear selected seats after successful booking
+
+        } catch (error) {
+            console.error("Booking confirmation failed:", error);
+            alert(`Booking failed: ${error.message || error}. Please try again.`);
+            // If booking fails, revert pending seats (important for robustness)
+            // In a simple client-side only model, this is hard. A Cloud Function would be ideal
+            // to automatically release pending seats if payment fails or timeout.
+            // For now, we'll just go back to seat selection.
+            selectScreen(selectedShowtimeDoc);
+        }
+    }
+
+    /**
+     * Resets the booking process to the initial city selection screen.
+     * Also attempts to release any 'pending' seats that were selected by the user
+     * if they navigate away or reset the process before confirming.
+     */
+    async function resetBooking() {
+        if (selectedShowtimeDoc && selectedSeats.length > 0) {
+            // Attempt to release any pending seats for the current user's session
+            try {
+                const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+                const updates = {};
+                selectedSeats.forEach(seat => {
+                    // Only release if the seat is still pending (meaning THIS user put it in pending)
+                    // A more robust check would involve storing user_id with 'pending' status
+                    updates[`seats.${seat}`] = "available";
+                });
+                await showtimeRef.update(updates);
+                console.log("Released pending seats on reset.");
+            } catch (error) {
+                console.error("Error releasing pending seats on reset:", error);
+            }
+        }
+
+        selectedCityDocRef = null;
+        selectedMovieDocRef = null;
+        selectedTheatreDocRef = null;
+        selectedShowtimeDoc = null;
+        selectedSeats = [];
+        showCities(); // Go back to the initial state
+    }
+
+    // Initialize Firebase and populate data, then show cities
+    window.onload = async () => {
+        // Ensure Firebase `db` is available before calling populateInitialData or showCities
+        // This check helps prevent errors if Firebase init failed earlier
+        if (typeof firebase !== 'undefined' && firebase.firestore && db) {
+            await populateInitialData(); // Call this to ensure data exists
+            showCities();
+        } else {
+            console.error("Firebase SDK not fully loaded or initialized. 'db' object is not available.");
+            document.getElementById("city-list").innerHTML = "<p style='color:red;'>Firebase SDK failed to load. Check your internet connection and console for errors.</p>";
+        }
+    };
+  </script>
+</body>
+</html>
