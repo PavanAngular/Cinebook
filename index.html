@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineBook - Movie Booking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      justify-content: center;
+    }
+    header {
+      margin: 2rem;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      width: 90%;
+      max-width: 700px;
+      justify-content: space-between;
+    }
+    header h1 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .user-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    .user-actions span {
+        font-size: 0.9rem;
+        color: #bbb;
+    }
+    .container {
+      background-color: #1e1e1e;
+      padding: 2rem;
+      border-radius: 1rem;
+      min-width: 300px;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: #6c63ff;
+    }
+    
+    .btn-grid {
+      display: flex;
+      gap: 0.7rem; 
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 8px 15px; 
+      border: 1px solid #333; 
+      border-radius: 5px; 
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+      min-width: 40px; 
+      text-align: center;
+      color: #ccc; 
+      background-color: #222; 
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    .btn.selected-seat {
+      background-color: yellow;
+      color: #121212;
+      border-color: gold;
+    }
+    .btn.booked-seat {
+      background-color: black;
+      color: #999;
+      cursor: not-allowed;
+      border-color: #111;
+    }
+    .btn.pending-seat {
+      background-color: orange;
+      color: #121212;
+      cursor: not-allowed;
+      border-color: #885a00;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .color-key {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem; 
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      padding: 10px;
+      background-color: #2a2a2a;
+      border-radius: 8px;
+    }
+    .key-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem; 
+    }
+    .key-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid #333;
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+    }
+    .available-key { background-color: #222; }
+    .selected-key { background-color: yellow; }
+    .booked-key { background-color: black; }
+    .pending-key { background-color: orange; }
+
+    .btn.back-btn {
+        background-color: #555;
+        margin-top: 1rem;
+    }
+    .btn.back-btn:hover {
+        background-color: #444;
+    }
+
+    /* --- Sections display control --- */
+    #auth-section, #theatre-selection, #movie-list, #screen-list, #seat-selection, #payment-section, #confirmation, #booking-history {
+      display: none;
+    }
+    #overview-section {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    #overview-section p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+    .movie-card {
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      width: 180px; 
+      text-align: center;
+    }
+    .movie-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+    .movie-card img {
+      width: 150px;
+      height: 225px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-bottom: 0.8rem;
+    }
+    .movie-card h3 {
+      font-size: 1.1rem;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    #movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    #total-amount-display {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    #confirmation #booking-details {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 2rem;
+      padding: 1.5rem;
+      background-color: #2a2a2a;
+      border-radius: 10px;
+      margin-top: 1.5rem;
+    }
+    #confirmation .movie-poster-details {
+      flex: 1;
+      min-width: 200px;
+      text-align: center;
+    }
+    #confirmation .movie-poster-details img {
+      width: 180px;
+      height: 270px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    #confirmation .booking-text-details {
+      flex: 2;
+      min-width: 250px;
+      text-align: left;
+    }
+    #confirmation .booking-text-details p {
+      margin: 0.7rem 0;
+      font-size: 1.1rem;
+    }
+    #confirmation .booking-text-details strong {
+      color: #6c63ff;
+    }
+
+    /* --- Auth Section Specific Styles - MADE BIGGER --- */
+    #auth-section {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 400px;
+        padding: 3rem;
+        border-radius: 1rem;
+        background-color: #1e1e1e;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        max-width: 450px;
+        width: 90%;
+        margin: 2rem auto;
+    }
+    #auth-section .section-title {
+        margin-bottom: 2rem;
+    }
+    #auth-section form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        flex-grow: 1;
+        justify-content: center;
+    }
+    #auth-section input[type="email"],
+    #auth-section input[type="password"],
+    #auth-section input[type="text"] {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #555;
+        background-color: #333;
+        color: white;
+        font-size: 1.1rem;
+    }
+    #auth-section button {
+        padding: 15px;
+        font-size: 1.2rem;
+        background-color: #6c63ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    #auth-section button:hover {
+        background-color: #5548c8;
+    }
+    #auth-section p.switch-auth-mode {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 1rem;
+    }
+    #auth-section p.switch-auth-mode a {
+        color: #6c63ff;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    /* --- Booking History Styles --- */
+    .booking-item {
+        background-color: #2a2a2a;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .booking-item .booking-poster {
+        flex-shrink: 0;
+        width: 100px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    .booking-item .booking-details-text {
+        flex-grow: 1;
+    }
+    .booking-item h3 {
+        margin-top: 0;
+        color: #6c63ff;
+    }
+    .booking-item p {
+        margin: 0.3rem 0;
+        font-size: 0.95rem;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>
+      <span>🎬</span>
+      CineBook
+    </h1>
+    <div class="user-actions">
+      <span id="user-display">Not logged in</span>
+      <button id="my-bookings-btn" class="btn" style="display:none;" onclick="showBookingHistory()">My Bookings</button>
+      <button id="logout-btn" class="btn" style="display:none;" onclick="logoutUser()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="auth-section">
+      <div class="section-title" id="auth-title">Login</div>
+      <form id="auth-form">
+        <input type="text" id="auth-name" placeholder="Name" style="display:none;">
+        <input type="email" id="auth-email" placeholder="Email" required>
+        <input type="password" id="auth-password" placeholder="Password" required>
+        <button type="submit" id="auth-submit-btn">Login</button>
+      </form>
+      <p class="switch-auth-mode">
+        Don't have an account? <a href="#" id="switch-to-signup">Sign Up</a>
+      </p>
+    </div>
+
+    <div id="city-section">
+      <div class="section-title">Select Your City</div>
+      <div id="overview-section">
+        <p>Welcome to CineBook! Your ultimate destination for booking movie tickets with ease. Select your city to begin your cinematic journey.</p>
+      </div>
+      <div id="city-list" class="btn-grid"></div>
+    </div>
+
+    <div id="movie-list">
+      <div class="section-title">Movies Playing Now</div>
+      <div id="movie-grid"></div>
+      <button class="btn back-btn" onclick="showCities()">Back to Cities</button>
+    </div>
+
+    <div id="theatre-selection">
+      <div class="section-title">Select Theatre</div>
+      <div id="theatre-buttons" class="btn-grid"></div>
+      <button class="btn back-btn" onclick="fetchMovies(selectedCityDocRef)">Back to Movies</button>
+    </div>
+
+    <div id="screen-list">
+      <div class="section-title">Select Screen & Time</div>
+      <div id="screen-buttons" class="btn-grid"></div>
+      <button class="btn back-btn" onclick="fetchTheatres(selectedMovieDocRef)">Back to Theatres</button>
+    </div>
+
+    <div id="seat-selection">
+      <div class="section-title">Select Your Seats</div>
+      <div class="color-key">
+        <div class="key-item"><span class="key-color available-key"></span> Available</div>
+        <div class="key-item"><span class="key-color selected-key"></span> Selected</div>
+        <div class="key-item"><span class="key-color booked-key"></span> Booked</div>
+        <div class="key-item"><span class="key-color pending-key"></span> Pending</div>
+      </div>
+      <div id="seat-buttons" class="btn-grid"></div>
+      <p id="total-amount-display">Total Amount: ₹<span>0</span></p>
+      <button class="btn" onclick="goToPayment()">Proceed to Payment</button>
+      <button class="btn back-btn" onclick="fetchShowtimes(selectedTheatreDocRef, selectedMovieDocRef)">Back to Screen & Time</button>
+    </div>
+
+    <div id="payment-section">
+      <div class="section-title">Payment Details</div>
+      <p id="payment-total-amount">Total Amount: ₹<span>0</span></p>
+      <button class="btn" onclick="confirmBooking()">Confirm Booking</button>
+      <button class="btn back-btn" onclick="selectScreen(selectedShowtimeDoc)">Back to Seat Selection</button>
+    </div>
+
+    <div id="confirmation">
+      <div class="section-title">Booking Confirmed!</div>
+      <div id="booking-details">
+        </div>
+      <button class="btn" onclick="resetBooking()">Book Another Ticket</button>
+      <button class="btn back-btn" onclick="showBookingHistory()">View All Bookings</button>
+    </div>
+
+    <div id="booking-history">
+        <div class="section-title">Your Booking History</div>
+        <div id="booking-history-list">
+            </div>
+        <button class="btn back-btn" onclick="showCities()">Back to Home</button>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script> 
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnPt8bt-xGX9VeeaigsgA47MQkeu1cKgQ",
+      authDomain: "cine-book-booking-system.firebaseapp.com",
+      projectId: "cine-book-booking-system",
+      storageBucket: "cine-book-booking-system.firebasestorage.app",
+      messagingSenderId: "906226887869",
+      appId: "1:906226887869:web:40c1298a8b096193f39bd4",
+      measurementId: "G-NTDW96MK9D"
+    };
+
+    let db;
+    let auth;
+    let currentUser = null;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      auth = firebase.auth();
+      console.log("Firebase initialized successfully!");
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      console.error("Please ensure your firebaseConfig is correct and all Firebase SDK scripts are loaded.");
+      document.getElementById("city-list").innerHTML = "<p style='color:red;'>Error initializing Firebase. Please check console for details and config.</p>";
+    }
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      const userDisplay = document.getElementById('user-display');
+      const myBookingsBtn = document.getElementById('my-bookings-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+
+      if (user) {
+        userDisplay.textContent = `Logged in as: ${user.displayName || user.email}`;
+        myBookingsBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'inline-block';
+        showCities();
+      } else {
+        userDisplay.textContent = 'Not logged in';
+        myBookingsBtn.style.display = 'none';
+        logoutBtn.style.display = 'none';
+        showLoginSignup();
+      }
+      console.log("Auth state changed. Current user:", user ? (user.displayName || user.email) : "none");
+    });
+
+
+    let selectedCityDocRef = null;
+    let selectedMovieDocRef = null;
+    let selectedTheatreDocRef = null;
+    let selectedShowtimeDoc = null;
+    let selectedSeats = [];
+
+    const seatPrice = 150;
+
+    function hideAllSections() {
+      document.getElementById("auth-section").style.display = "none";
+      document.getElementById("city-section").style.display = "none";
+      document.getElementById("movie-list").style.display = "none";
+      document.getElementById("theatre-selection").style.display = "none";
+      document.getElementById("screen-list").style.display = "none";
+      document.getElementById("seat-selection").style.display = "none";
+      document.getElementById("payment-section").style.display = "none";
+      document.getElementById("confirmation").style.display = "none";
+      document.getElementById("booking-history").style.display = "none";
+    }
+
+    const authForm = document.getElementById('auth-form');
+    const authNameInput = document.getElementById('auth-name');
+    const authEmailInput = document.getElementById('auth-email');
+    const authPasswordInput = document.getElementById('auth-password');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authTitle = document.getElementById('auth-title');
+    const switchToSignupLink = document.getElementById('switch-to-signup');
+
+    let isLoginMode = true;
+
+    switchToSignupLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      authTitle.textContent = isLoginMode ? 'Login' : 'Sign Up';
+      authSubmitBtn.textContent = isLoginMode ? 'Login' : 'Sign Up';
+      switchToSignupLink.textContent = isLoginMode ? 'Sign Up' : 'Login';
+      const switchText = isLoginMode ? "Don't have an account?" : "Already have an account?";
+      switchToSignupLink.parentNode.firstChild.nodeValue = switchText + ' ';
+
+      authNameInput.style.display = isLoginMode ? 'none' : 'block';
+      authNameInput.required = !isLoginMode;
+    });
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = authEmailInput.value;
+      const password = authPasswordInput.value;
+      const name = authNameInput.value;
+
+      if (!email || !password || (!isLoginMode && !name)) {
+        alert("Please enter all required fields (Name, Email, Password).");
+        return;
+      }
+
+      if (isLoginMode) {
+        loginUser(email, password);
+      } else {
+        signupUser(email, password, name);
+      }
+    });
+
+    function showLoginSignup() {
+      hideAllSections();
+      document.getElementById("auth-section").style.display = "block";
+      isLoginMode = true;
+      authTitle.textContent = 'Login';
+      authSubmitBtn.textContent = 'Login';
+      switchToSignupLink.textContent = 'Sign Up';
+      switchToSignupLink.parentNode.firstChild.nodeValue = "Don't have an account? ";
+      authNameInput.style.display = 'none';
+      authNameInput.required = false;
+      authForm.reset();
+    }
+
+    async function signupUser(email, password, name) {
+      try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        if (user && name) {
+            await user.updateProfile({ displayName: name });
+            console.log("User display name set to:", name);
+        }
+
+        alert('Account created successfully! You are now logged in.');
+      } catch (error) {
+        console.error("Signup error:", error);
+        alert(`Signup failed: ${error.message}`);
+      }
+    }
+
+    async function loginUser(email, password) {
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        alert('Logged in successfully!');
+      } catch (error) {
+        console.error("Login error:", error);
+        alert(`Login failed: ${error.message}`);
+      }
+    }
+
+    async function logoutUser() {
+      try {
+        await auth.signOut();
+        alert('Logged out successfully!');
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert(`Logout failed: ${error.message}`);
+      }
+    }
+
+
+    async function populateInitialData() {
+        console.log("--- populateInitialData started ---");
+        if (!db) {
+            console.error("populateInitialData: Firestore database (db) is not initialized. Cannot populate data.");
+            return;
+        }
+
+        const citiesCollection = db.collection('cities');
+        const moviesCollection = db.collection('movies');
+        const theatresCollection = db.collection('theatres');
+        const showtimesCollection = db.collection('showtimes');
+
+        try {
+            console.log("populateInitialData: Checking if 'cities' collection is empty...");
+            const citySnap = await citiesCollection.limit(1).get();
+            if (!citySnap.empty) {
+                console.log("populateInitialData: Data already exists in 'cities' collection. Skipping full population.");
+                console.log("--- populateInitialData finished (skipped) ---");
+                return;
+            }
+        } catch (error) {
+            console.error("populateInitialData: Error checking for existing data (likely a READ permission issue on 'cities'):", error);
+            console.warn("populateInitialData: Proceeding with population attempt assuming collection is empty due to read error.");
+        }
+
+        console.log("populateInitialData: Collections are empty or inaccessible for read. Starting data population.");
+
+        const citiesData = [
+            { id: "hyderabad", name: "Hyderabad" },
+            { id: "bangalore", name: "Bangalore" },
+            { id: "chennai", name: "Chennai" },
+            { id: "mumbai", name: "Mumbai" },
+            { id: "delhi", name: "Delhi" }
+        ];
+
+        const moviesData = [
+            { id: "dune-part-two", name: "Dune: Part Two", poster: "https://m.media-amazon.com/images/M/MV5BMzllYjE4ZmUtOTAwOC00MTRkLTkyZTctMTdmZThhNWYxMTgzXkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UY281_CR1,0,190,281_.jpg" },
+            { id: "kung-fu-panda-4", name: "Kung Fu Panda 4", poster: "https://m.media-amazon.com/images/M/MV5BN2U3OGIxYmItMzg0Yy00ZTczLTgwMzUtY2RmN2I2MDExNDUzXkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UX190_CR0,0,190,281_.jpg" },
+            { id: "godzilla-x-kong", name: "Godzilla x Kong", poster: "https://image.tmdb.org/t/p/w300/gho0gI0uH6QfNqjVnFj1oV3z9M.jpg" },
+            { id: "ghostbusters", name: "Ghostbusters", poster: "https://image.tmdb.org/t/p/w300/y6w8fJ4dYF8v4E9l5a2J3Z6w0.jpg" },
+            { id: "challengers", name: "Challengers", poster: "https://m.media-amazon.com/images/M/MV5BZWZlMzQzZmMtZWU2OS00ZjkxLWFjNmQtNzQ0YWM3NGM2NzU2XkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UY281_CR1,0,190,281_.jpg" },
+            { id: "civil-war", name: "Civil War", poster: "https://m.media-amazon.com/images/M/MV5BNjE4YWI2NDQtMmEzNi00MjAzLTgxMTAtYjE2ZGI1ZTY4MDIwXkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UY281_CR1,0,190,281_.jpg" },
+            { id: "the-first-omen", name: "The First Omen", poster: "https://m.media-amazon.com/images/M/MV5BYzA0M2YwZmQtODU4My00ZTg5LWE0OWMtNjE0NDlmNjQ1Y2MyXkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UY281_CR1,0,190,281_.jpg" },
+            { id: "monkey-man", name: "Monkey Man", poster: "https://m.media-amazon.com/images/M/MV5BYzJkYWU1MDgtYjllYS00NmFjLWEzNjItMzU4NTg2MjQzNmMxXkEyXkFqcGdeQXVyMTUzMTg2ODkz._V1_QL75_UY281_CR1,0,190,281_.jpg" }
+        ];
+
+        const theatresPreData = [
+            { id: "pvr-cinemas-hyderabad", name: "PVR Cinemas", city_id: "hyderabad" },
+            { id: "inox-hyderabad", name: "INOX", city_id: "hyderabad" },
+            { id: "cinepolis-bangalore", name: "Cinepolis", city_id: "bangalore" },
+            { id: "prasads-chennai", name: "Prasads", city_id: "chennai" },
+            { id: "dt-cinemas-mumbai", name: "DT Cinemas", city_id: "mumbai" },
+            { id: "wave-cinemas-delhi", name: "Wave Cinemas", city_id: "delhi" },
+        ];
+
+        const SEATS_PER_SHOWTIME = 50;
+
+        try {
+            console.log("populateInitialData: Attempting to add cities...");
+            for (const city of citiesData) {
+                await citiesCollection.doc(city.id).set(city);
+                console.log(`populateInitialData: Added city: ${city.name}`);
+            }
+            console.log("populateInitialData: Cities added. Attempting to add movies...");
+            for (const movie of moviesData) {
+                await moviesCollection.doc(movie.id).set(movie);
+                console.log(`populateInitialData: Added movie: ${movie.name}`);
+            }
+            console.log("populateInitialData: Movies added. Attempting to add theatres...");
+            for (const theatre of theatresPreData) {
+                await theatresCollection.doc(theatre.id).set(theatre);
+                console.log(`populateInitialData: Added theatre: ${theatre.name}`);
+            }
+            console.log("populateInitialData: Theatres added. Attempting to add showtimes...");
+
+            await showtimesCollection.add({
+                movie_id: "dune-part-two", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 1", time: "10:00 AM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "kung-fu-panda-4", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 3", time: "01:00 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "ghostbusters", theatre_id: "pvr-cinemas-hyderabad", screen_name: "Screen 2", time: "04:00 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            await showtimesCollection.add({
+                movie_id: "godzilla-x-kong", theatre_id: "inox-hyderabad", screen_name: "Screen 1", time: "11:00 AM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "monkey-man", theatre_id: "inox-hyderabad", screen_name: "Screen 2", time: "02:30 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            await showtimesCollection.add({
+                movie_id: "challengers", theatre_id: "cinepolis-bangalore", screen_name: "Screen 1", time: "07:00 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "dune-part-two", theatre_id: "cinepolis-bangalore", screen_name: "Screen 2", time: "10:30 AM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            await showtimesCollection.add({
+                movie_id: "the-first-omen", theatre_id: "prasads-chennai", screen_name: "Screen 1", time: "09:45 AM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+            await showtimesCollection.add({
+                movie_id: "kung-fu-panda-4", theatre_id: "prasads-chennai", screen_name: "Screen 2", time: "01:15 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            await showtimesCollection.add({
+                movie_id: "civil-war", theatre_id: "dt-cinemas-mumbai", screen_name: "Screen 1", time: "06:00 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+            await showtimesCollection.add({
+                movie_id: "godzilla-x-kong", theatre_id: "wave-cinemas-delhi", screen_name: "Screen 1", time: "09:00 PM", total_seats: SEATS_PER_SHOWTIME, seats: Array.from({ length: SEATS_PER_SHOWTIME }, (_, i) => `Seat ${i + 1}`).reduce((acc, seat) => { acc[seat] = "available"; return acc; }, {})
+            });
+
+
+            console.log("populateInitialData: All initial data populated successfully!");
+            console.log("--- populateInitialData finished (success) ---");
+        } catch (error) {
+            console.error("populateInitialData: CRITICAL ERROR during data population:", error);
+            console.error("populateInitialData: This means Firestore WRITE Security Rules are blocking the operation. Check the 'populateInitialData: Attempting to add...' logs to see which collection failed.");
+            console.error("populateInitialData: Ensure 'allow write: if true;' is set for all collections (cities, movies, theatres, showtimes).");
+            console.log("--- populateInitialData finished (error) ---");
+        }
+    }
+
+
+    async function showCities() {
+      hideAllSections();
+      document.getElementById("city-section").style.display = "block";
+
+      const cityList = document.getElementById("city-list");
+      cityList.innerHTML = "Loading cities...";
+
+      if (!db) {
+          console.error("Firestore database (db) is not initialized. Cannot fetch cities.");
+          cityList.innerHTML = "<p style='color:red;'>Firestore not initialized. Check console for Firebase setup errors.</p>";
+          return;
+      }
+
+      try {
+        const snapshot = await db.collection('cities').get();
+        cityList.innerHTML = "";
+        if (snapshot.empty) {
+            console.warn("No cities found in Firestore 'cities' collection. Is data populated? Check populateInitialData logs.");
+            cityList.innerHTML = "<p style='text-align:center;'>No cities found. Please ensure data is added to Firestore (check console for errors).</p>";
+            return;
+        }
+        snapshot.forEach(doc => {
+          const cityData = doc.data();
+          if (cityData && cityData.name) {
+              const btn = document.createElement("button");
+              btn.className = "btn";
+              btn.textContent = cityData.name;
+              btn.onclick = () => fetchMovies(doc);
+              cityList.appendChild(btn);
+          } else {
+              console.warn("Found a city document without a 'name' field:", doc.id, cityData);
+          }
+        });
+        console.log("Cities fetched and displayed successfully.");
+      } catch (error) {
+        console.error("Error fetching cities: ", error);
+        console.error("Possible reasons: Firebase config incorrect, Firestore not enabled, or Security Rules blocking read access.");
+        cityList.innerHTML = "<p style='text-align:center; color:red;'>Error loading cities. Please check browser console and Firebase setup.</p>";
+      }
+    }
+
+    async function fetchMovies(cityDoc) {
+      selectedCityDocRef = cityDoc;
+      hideAllSections();
+      document.getElementById("movie-list").style.display = "block";
+
+      const movieGrid = document.getElementById("movie-grid");
+      movieGrid.innerHTML = "Loading movies...";
+
+      if (!db) { console.error("Firestore not initialized."); movieGrid.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        const movieSnapshot = await db.collection('movies').get();
+        const theatreSnapshot = await db.collection('theatres').where('city_id', '==', selectedCityDocRef.id).get();
+        const showtimeSnapshot = await db.collection('showtimes').get();
+
+        const availableMovieIdsInCity = new Set();
+        theatreSnapshot.forEach(theatreDoc => {
+            const theatreId = theatreDoc.id;
+            showtimeSnapshot.forEach(showtimeDoc => {
+                if (showtimeDoc.data().theatre_id === theatreId) {
+                    availableMovieIdsInCity.add(showtimeDoc.data().movie_id);
+                }
+            });
+        });
+
+        movieGrid.innerHTML = "";
+        let moviesFound = false;
+        movieSnapshot.forEach(movieDoc => {
+            if (availableMovieIdsInCity.has(movieDoc.id)) {
+                moviesFound = true;
+                const movieData = movieDoc.data();
+                const movieCard = document.createElement("div");
+                movieCard.className = "movie-card";
+                movieCard.onclick = () => fetchTheatres(movieDoc);
+
+                const img = document.createElement("img");
+                img.src = movieData.poster;
+                img.alt = movieData.name + " Poster";
+                img.onerror = function() { this.onerror=null; this.src='https://placehold.co/150x225/CCCCCC/000000?text=Image+Missing'; };
+
+                const title = document.createElement("h3");
+                title.textContent = movieData.name;
+
+                movieCard.appendChild(img);
+                movieCard.appendChild(title);
+                movieGrid.appendChild(movieCard);
+            }
+        });
+
+        if (!moviesFound) {
+            movieGrid.innerHTML = "<p style='text-align:center;'>No movies found for this city.</p>";
+        }
+        console.log("Movies fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching movies: ", error);
+        movieGrid.innerHTML = "<p style='text-align:center; color:red;'>Error loading movies. Please try again.</p>";
+      }
+    }
+
+    async function fetchTheatres(movieDoc) {
+      selectedMovieDocRef = movieDoc;
+      hideAllSections();
+      document.getElementById("theatre-selection").style.display = "block";
+
+      const theatreButtons = document.getElementById("theatre-buttons");
+      theatreButtons.innerHTML = "Loading theatres...";
+
+      if (!db) { console.error("Firestore not initialized."); theatreButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        const theatreQuery = db.collection('theatres').where('city_id', '==', selectedCityDocRef.id);
+        const theatreSnapshot = await theatreQuery.get();
+
+        const theatresForMovie = new Set();
+        const showtimeQuery = db.collection('showtimes').where('movie_id', '==', selectedMovieDocRef.id);
+        const showtimeSnapshot = await showtimeQuery.get();
+
+        showtimeSnapshot.forEach(showtimeDoc => {
+            theatresForMovie.add(showtimeDoc.data().theatre_id);
+        });
+
+        theatreButtons.innerHTML = "";
+        let theatresFound = false;
+        theatreSnapshot.forEach(theatreDoc => {
+            if (theatresForMovie.has(theatreDoc.id)) {
+                theatresFound = true;
+                const theatreData = theatreDoc.data();
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = theatreData.name;
+                btn.onclick = () => fetchShowtimes(theatreDoc, selectedMovieDocRef);
+                theatreButtons.appendChild(btn);
+            }
+        });
+
+        if (!theatresFound) {
+            theatreButtons.innerHTML = "<p style='text-align:center;'>No theatres found for this movie in your selected city.</p>";
+        }
+        console.log("Theatres fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching theatres: ", error);
+        theatreButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading theatres. Please try again.</p>";
+      }
+    }
+
+    async function fetchShowtimes(theatreDoc, movieDoc) {
+      selectedTheatreDocRef = theatreDoc;
+      selectedMovieDocRef = movieDoc;
+      hideAllSections();
+      document.getElementById("screen-list").style.display = "block";
+
+      const screenButtons = document.getElementById("screen-buttons");
+      screenButtons.innerHTML = "Loading showtimes...";
+
+      if (!db) { console.error("Firestore not initialized."); screenButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        const showtimeQuery = db.collection('showtimes')
+                                .where('theatre_id', '==', theatreDoc.id)
+                                .where('movie_id', '==', movieDoc.id)
+                                .orderBy('time');
+
+        const snapshot = await showtimeQuery.get();
+
+        screenButtons.innerHTML = "";
+        if (snapshot.empty) {
+          screenButtons.innerHTML = "<p style='text-align:center;'>No showtimes available for this movie at this theatre.</p>";
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const showtimeData = doc.data();
+          const btn = document.createElement("button");
+          btn.className = "btn";
+          btn.textContent = `${showtimeData.screen_name} - ${showtimeData.time}`;
+          btn.onclick = () => selectScreen(doc);
+          screenButtons.appendChild(btn);
+        });
+        console.log("Showtimes fetched and displayed.");
+
+      } catch (error) {
+        console.error("Error fetching showtimes: ", error);
+        screenButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading showtimes. Please try again.</p>";
+      }
+    }
+
+    async function selectScreen(showtimeDoc) {
+      selectedShowtimeDoc = showtimeDoc;
+      hideAllSections();
+      document.getElementById("seat-selection").style.display = "block";
+
+      const seatButtons = document.getElementById("seat-buttons");
+      seatButtons.innerHTML = "Loading seats...";
+      selectedSeats = [];
+      document.getElementById("total-amount-display").textContent = `Total Amount: ₹${0}`;
+
+      if (!db) { console.error("Firestore not initialized."); seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Firestore not initialized.</p>"; return; }
+
+      try {
+        db.collection('showtimes').doc(selectedShowtimeDoc.id)
+          .onSnapshot(docSnapshot => {
+            if (docSnapshot.exists) {
+              const showtimeData = docSnapshot.data();
+              const seatsStatus = showtimeData.seats || {};
+
+              seatButtons.innerHTML = "";
+              const totalSeats = showtimeData.total_seats || 50;
+
+              for (let i = 1; i <= totalSeats; i++) {
+                const seatNum = `Seat ${i}`;
+                const status = seatsStatus[seatNum] || 'available';
+
+                const btn = document.createElement("button");
+                btn.className = "btn";
+                btn.textContent = seatNum;
+
+                if (status === 'booked') {
+                  btn.classList.add('booked-seat');
+                  btn.disabled = true;
+                } else if (status === 'pending') {
+                  btn.classList.add('pending-seat');
+                  btn.disabled = true;
+                } else {
+                  btn.onclick = () => toggleSeat(btn, seatNum);
+                  if (selectedSeats.includes(seatNum)) {
+                      btn.classList.add('selected-seat');
+                  }
+                }
+                seatButtons.appendChild(btn);
+              }
+              console.log("Seats updated from Firestore.");
+            } else {
+              seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Showtime not found or deleted.</p>";
+              console.error("Showtime document not found:", selectedShowtimeDoc.id);
+            }
+          }, error => {
+            console.error("Error listening to seats:", error);
+            seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Error loading seats in real-time. Please check console.</p>";
+          });
+
+      } catch (error) {
+        console.error("Error preparing seat selection:", error);
+        seatButtons.innerHTML = "<p style='text-align:center; color:red;'>Error preparing seats. Please try again.</p>";
+      }
+    }
+
+    /**
+     * Toggles the selection of a seat and updates the UI and total amount.
+     * @param {HTMLButtonElement} button - The seat button element.
+     * @param {string} seatNum - The seat number (e.g., "Seat 5").
+     */
+    function toggleSeat(button, seatNum) {
+      const index = selectedSeats.indexOf(seatNum);
+
+      if (index > -1) {
+        selectedSeats.splice(index, 1);
+        button.classList.remove("selected-seat");
+      } else {
+        selectedSeats.push(seatNum);
+        button.classList.add("selected-seat");
+      }
+      document.getElementById("total-amount-display").textContent = `Total Amount: ₹${selectedSeats.length * seatPrice}`;
+      console.log("Selected seats:", selectedSeats);
+    }
+
+    /**
+     * Proceeds from seat selection to the payment section.
+     * Attempts to temporarily block selected seats in Firestore.
+     */
+    async function goToPayment() {
+      if (selectedSeats.length === 0) {
+        alert("Please select at least one seat before proceeding to payment.");
+        return;
+      }
+      if (!currentUser) {
+        alert("Please log in to proceed with booking.");
+        showLoginSignup();
+        return;
+      }
+
+      try {
+        const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+        const updates = {};
+        selectedSeats.forEach(seat => {
+          updates[`seats.${seat}`] = "pending";
+        });
+
+        await showtimeRef.update(updates);
+
+        hideAllSections();
+        document.getElementById("payment-section").style.display = "block";
+        document.getElementById("payment-total-amount").textContent = `Total Amount: ₹${selectedSeats.length * seatPrice}`;
+        console.log("Seats successfully set to 'pending' in Firestore.");
+      } catch (error) {
+        console.error("Error blocking seats:", error);
+        alert("Failed to block seats. They might have been taken or an error occurred. Please re-select your seats.");
+        selectScreen(selectedShowtimeDoc);
+      }
+    }
+
+    /**
+     * Confirms the booking, finalizes seat status to 'booked' in Firestore,
+     * and records the booking.
+     */
+    async function confirmBooking() {
+        if (selectedSeats.length === 0) {
+            alert("No seats selected for booking.");
+            return;
+        }
+        if (!currentUser) {
+            alert("You must be logged in to confirm a booking.");
+            return;
+        }
+
+        try {
+            const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+
+            await db.runTransaction(async (transaction) => {
+                const showtimeDoc = await transaction.get(showtimeRef);
+                if (!showtimeDoc.exists) {
+                    throw new Error("Showtime does not exist!");
+                }
+
+                const currentSeatsStatus = showtimeDoc.data().seats || {};
+                const updates = {};
+                const seatsToBook = [];
+
+                selectedSeats.forEach(seat => {
+                    if (currentSeatsStatus[seat] === 'pending' || currentSeatsStatus[seat] === 'available') {
+                        updates[`seats.${seat}`] = "booked";
+                        seatsToBook.push(seat);
+                    } else {
+                        throw new Error(`Seat ${seat} is no longer available (status: ${currentSeatsStatus[seat] || 'undefined'}).`);
+                    }
+                });
+
+                if (seatsToBook.length !== selectedSeats.length) {
+                    throw new Error("Mismatch in selected seats during booking. Some seats might have been taken.");
+                }
+
+                transaction.update(showtimeRef, updates);
+
+                transaction.set(db.collection('bookings').doc(), {
+                    user_id: currentUser.uid,
+                    user_email: currentUser.email,
+                    movie_name: selectedMovieDocRef.data().name,
+                    movie_poster: selectedMovieDocRef.data().poster,
+                    theatre_name: selectedTheatreDocRef.data().name,
+                    screen_name: selectedShowtimeDoc.data().screen_name,
+                    show_time: selectedShowtimeDoc.data().time,
+                    seats_booked: seatsToBook,
+                    total_amount: seatsToBook.length * seatPrice,
+                    booking_date: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: "confirmed"
+                });
+            });
+
+            hideAllSections();
+            document.getElementById("confirmation").style.display = "block";
+
+            const bookingDetails = document.getElementById("booking-details");
+            bookingDetails.innerHTML = `
+                <div class="movie-poster-details">
+                    <img src="${selectedMovieDocRef.data().poster}" alt="${selectedMovieDocRef.data().name} Poster">
+                    <h3>${selectedMovieDocRef.data().name}</h3>
+                </div>
+                <div class="booking-details-text">
+                    <p><strong>City:</strong> ${selectedCityDocRef.data().name}</p>
+                    <p><strong>Theatre:</strong> ${selectedTheatreDocRef.data().name}</p>
+                    <p><strong>Screen & Time:</strong> ${selectedShowtimeDoc.data().screen_name} - ${selectedShowtimeDoc.data().time}</p>
+                    <p><strong>Seats:</strong> ${selectedSeats.join(", ")}</p>
+                    <p><strong>Total Paid:</strong> ₹${selectedSeats.length * seatPrice}</p>
+                </div>
+            `;
+            selectedSeats = [];
+
+        } catch (error) {
+            console.error("Booking confirmation failed:", error);
+            alert(`Booking failed: ${error.message || error}. Please try again.`);
+            selectScreen(selectedShowtimeDoc);
+        }
+    }
+
+    /**
+     * Resets the booking process to the initial city selection screen.
+     */
+    async function resetBooking() {
+        if (selectedShowtimeDoc && selectedSeats.length > 0 && currentUser) {
+            try {
+                const showtimeRef = db.collection('showtimes').doc(selectedShowtimeDoc.id);
+                const updates = {};
+                selectedSeats.forEach(seat => {
+                    updates[`seats.${seat}`] = "available";
+                });
+                await showtimeRef.update(updates);
+                console.log("Released pending seats on reset.");
+            } catch (error) {
+                console.error("Error releasing pending seats on reset:", error);
+            }
+        }
+
+        selectedCityDocRef = null;
+        selectedMovieDocRef = null;
+        selectedTheatreDocRef = null;
+        selectedShowtimeDoc = null;
+        selectedSeats = [];
+        if (currentUser) {
+            showCities();
+        } else {
+            showLoginSignup();
+        }
+    };
+
+    async function showBookingHistory() {
+        if (!currentUser) {
+            alert("Please log in to view your booking history.");
+            showLoginSignup();
+            return;
+        }
+        hideAllSections();
+        document.getElementById("booking-history").style.display = "block";
+        const bookingListDiv = document.getElementById('booking-history-list');
+        bookingListDiv.innerHTML = "Loading your bookings...";
+
+        try {
+            const snapshot = await db.collection('bookings')
+                                     .where('user_id', '==', currentUser.uid)
+                                     .orderBy('booking_date', 'desc')
+                                     .get();
+
+            bookingListDiv.innerHTML = "";
+
+            if (snapshot.empty) {
+                bookingListDiv.innerHTML = "<p style='text-align:center;'>You have no booking history yet.</p>";
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const booking = doc.data();
+                const bookingItem = document.createElement('div');
+                bookingItem.className = 'booking-item';
+                bookingItem.innerHTML = `
+                    <img src="${booking.movie_poster}" alt="${booking.movie_name} Poster" class="booking-poster">
+                    <div class="booking-details-text">
+                        <h3>${booking.movie_name}</h3>
+                        <p><strong>Theatre:</strong> ${booking.theatre_name}</p>
+                        <p><strong>Screen & Time:</strong> ${booking.screen_name} - ${booking.show_time}</p>
+                        <p><strong>Seats:</strong> ${booking.seats_booked.join(', ')}</p>
+                        <p><strong>Total Paid:</strong> ₹${booking.total_amount}</p>
+                        <p><strong>Booked On:</strong> ${booking.booking_date ? new Date(booking.booking_date.toDate()).toLocaleString() : 'N/A'}</p>
+                    </div>
+                `;
+                bookingListDiv.appendChild(bookingItem);
+            });
+            console.log("Booking history fetched for user:", currentUser.email);
+
+        } catch (error) {
+            console.error("Error fetching booking history:", error);
+            bookingListDiv.innerHTML = "<p style='text-align:center; color:red;'>Error loading booking history. Please try again.</p>";
+            alert("Failed to load booking history: " + error.message);
+        }
+    }
+
+
+    window.onload = async () => {
+        if (typeof firebase !== 'undefined' && firebase.firestore && db && auth) {
+            await populateInitialData();
+        } else {
+            console.error("Firebase SDK not fully loaded or initialized. 'db' or 'auth' object is not available.");
+            document.getElementById("city-list").innerHTML = "<p style='color:red;'>Firebase SDK failed to load. Check your internet connection and console for errors.</p>";
+        }
+    };
+  </script>
+</body>
+</html>
